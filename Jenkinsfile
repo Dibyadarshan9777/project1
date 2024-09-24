@@ -2,11 +2,9 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials-id')  // Add Docker Hub credentials in Jenkins
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials-id')
         DOCKER_IMAGE = 'dibyadarshandevops/project1:v1.0'
-        KUBECONFIG_PATH = '/var/jenkins_home/.kube/config'  // Path to kubeconfig inside Jenkins container
-        HELM_RELEASE = 'project1-release'  // Helm release name
-        HELM_CHART_PATH = '/home/dbeher735/project/1-html5up-forty/project1'  // Path to your Helm chart
+        KUBECONFIG_PATH = '/var/jenkins_home/.kube/config'
     }
 
     stages {
@@ -53,12 +51,13 @@ pipeline {
             }
         }
 
-        stage('Deploy to Kubernetes with Helm') {
+        stage('Deploy to Kubernetes') {
             steps {
                 script {
                     echo 'Deploying to Kubernetes with Helm...'
+                    // Point to the Helm chart directory within the cloned repo
                     sh '''
-                        helm upgrade --install $HELM_RELEASE $HELM_CHART_PATH \
+                        helm upgrade --install project1-release ./project1 \
                         --set image.repository=$DOCKER_IMAGE \
                         --namespace dbspe
                     '''
