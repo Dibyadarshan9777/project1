@@ -56,12 +56,12 @@ pipeline {
             steps {
                 script {
                     echo 'Deploying to Kubernetes with Helm...'
-                    sh '''
+                    sh """
                         helm upgrade --install project1-release ./project1 \
-                        --set image.repository='$DOCKER_IMAGE_REPO' \
-                        --set image.tag='$DOCKER_IMAGE_TAG' \
+                        --set image.repository='${DOCKER_IMAGE_REPO}' \
+                        --set image.tag='${DOCKER_IMAGE_TAG}' \
                         --namespace dbspe
-                    '''
+                    """
                 }
             }
         }
