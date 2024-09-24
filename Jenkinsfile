@@ -4,7 +4,9 @@ pipeline {
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials-id')  // Add Docker Hub credentials in Jenkins
         DOCKER_IMAGE = 'dibyadarshandevops/project1:v1.0'
-        KUBECONFIG_PATH = '/var/jenkins_home/.kube/config'  // Correct path to kubeconfig in the container
+        KUBECONFIG_PATH = '/var/jenkins_home/.kube/config'  // Path to kubeconfig inside Jenkins container
+        HELM_RELEASE = 'project1-release'  // Helm release name
+        HELM_CHART_PATH = '/home/dbeher735/project/1-html5up-forty/project1'  // Path to your Helm chart
     }
 
     stages {
@@ -28,7 +30,6 @@ pipeline {
             steps {
                 script {
                     echo 'Running tests...'
-                    // Example of running a basic test, replace with your own test scripts
                     sh 'docker run --rm $DOCKER_IMAGE /bin/sh -c "echo Test successful!"'
                 }
             }
@@ -52,26 +53,15 @@ pipeline {
             }
         }
 
-        stage('Deploy to Kubernetes') {
+        stage('Deploy to Kubernetes with Helm') {
             steps {
                 script {
-                    echo 'Deploying to Kubernetes...'
-                    // Use the correct kubeconfig path inside the Jenkins container
-                    sh 'export KUBECONFIG=$KUBECONFIG_PATH'
-                    
-                    // Example using kubectl to apply a Kubernetes manifest file
+                    echo 'Deploying to Kubernetes with Helm...'
                     sh '''
-                        kubectl apply -f k8s/deployment.yaml --namespace dbspe
-                    '''
-                    
-                    // Alternatively, if you're using Helm, uncomment the following lines
-                    /*
-                    sh '''
-                        helm upgrade --install project1 ./helm-chart \
+                        helm upgrade --install $HELM_RELEASE $HELM_CHART_PATH \
                         --set image.repository=$DOCKER_IMAGE \
                         --namespace dbspe
                     '''
-                    */
                 }
             }
         }
@@ -80,7 +70,7 @@ pipeline {
     post {
         always {
             script {
-                echo 'Cleaning up Docker images...'
+                echo 'Cleaning up...'
                 sh 'docker rmi $DOCKER_IMAGE || true'
             }
         }
