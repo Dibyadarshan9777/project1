@@ -3,7 +3,8 @@ pipeline {
 
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials-id')
-        DOCKER_IMAGE = 'dibyadarshandevops/project1:v1.0'
+        DOCKER_IMAGE_REPO = 'dibyadarshandevops/project1'  // Repository only
+        DOCKER_IMAGE_TAG = 'v1.0'  // Tag only
         KUBECONFIG_PATH = '/var/jenkins_home/.kube/config'
     }
 
@@ -19,7 +20,7 @@ pipeline {
             steps {
                 script {
                     echo 'Building Docker image...'
-                    sh 'docker build -t $DOCKER_IMAGE .'
+                    sh "docker build -t ${DOCKER_IMAGE_REPO}:${DOCKER_IMAGE_TAG} ."
                 }
             }
         }
@@ -28,7 +29,7 @@ pipeline {
             steps {
                 script {
                     echo 'Running tests...'
-                    sh 'docker run --rm $DOCKER_IMAGE /bin/sh -c "echo Test successful!"'
+                    sh "docker run --rm ${DOCKER_IMAGE_REPO}:${DOCKER_IMAGE_TAG} /bin/sh -c \"echo Test successful!\""
                 }
             }
         }
@@ -37,7 +38,7 @@ pipeline {
             steps {
                 script {
                     echo 'Logging into Docker Hub...'
-                    sh "echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin"
+                    sh "echo \$DOCKERHUB_CREDENTIALS_PSW | docker login -u \$DOCKERHUB_CREDENTIALS_USR --password-stdin"
                 }
             }
         }
@@ -46,7 +47,7 @@ pipeline {
             steps {
                 script {
                     echo 'Pushing Docker image to Docker Hub...'
-                    sh 'docker push $DOCKER_IMAGE'
+                    sh "docker push ${DOCKER_IMAGE_REPO}:${DOCKER_IMAGE_TAG}"
                 }
             }
         }
@@ -55,10 +56,10 @@ pipeline {
             steps {
                 script {
                     echo 'Deploying to Kubernetes with Helm...'
-                    // Point to the Helm chart directory within the cloned repo
                     sh '''
                         helm upgrade --install project1-release ./project1 \
-                        --set image.repository=$DOCKER_IMAGE \
+                        --set image.repository='$DOCKER_IMAGE_REPO' \
+                        --set image.tag='$DOCKER_IMAGE_TAG' \
                         --namespace dbspe
                     '''
                 }
@@ -70,7 +71,7 @@ pipeline {
         always {
             script {
                 echo 'Cleaning up...'
-                sh 'docker rmi $DOCKER_IMAGE || true'
+                sh "docker rmi ${DOCKER_IMAGE_REPO}:${DOCKER_IMAGE_TAG} || true"
             }
         }
         success {
