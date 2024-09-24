@@ -4,6 +4,7 @@ pipeline {
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials-id')  // Add Docker Hub credentials in Jenkins
         DOCKER_IMAGE = 'dibyadarshandevops/project1:v1.0'
+        KUBECONFIG_PATH = '/var/jenkins_home/.kube/config'  // Correct path to kubeconfig in the container
     }
 
     stages {
@@ -50,12 +51,36 @@ pipeline {
                 }
             }
         }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                script {
+                    echo 'Deploying to Kubernetes...'
+                    // Use the correct kubeconfig path inside the Jenkins container
+                    sh 'export KUBECONFIG=$KUBECONFIG_PATH'
+                    
+                    // Example using kubectl to apply a Kubernetes manifest file
+                    sh '''
+                        kubectl apply -f k8s/deployment.yaml --namespace dbspe
+                    '''
+                    
+                    // Alternatively, if you're using Helm, uncomment the following lines
+                    /*
+                    sh '''
+                        helm upgrade --install project1 ./helm-chart \
+                        --set image.repository=$DOCKER_IMAGE \
+                        --namespace dbspe
+                    '''
+                    */
+                }
+            }
+        }
     }
 
     post {
         always {
             script {
-                echo 'Cleaning up...'
+                echo 'Cleaning up Docker images...'
                 sh 'docker rmi $DOCKER_IMAGE || true'
             }
         }
@@ -67,3 +92,4 @@ pipeline {
         }
     }
 }
+
